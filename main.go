@@ -16,7 +16,7 @@ import (
 
 func main() {
 	// Define the file path and the two sets of keywords to search for
-	filePath := "/Users/newjoiner1/Desktop/log.txt"
+	filePath := os.Getenv("FILE_PATH")
 	startKeyword1 := "file name=\""
 	endKeyword1 := "\">"
 	startKeyword2 := "message="
@@ -45,6 +45,8 @@ func main() {
 	// Extract the second string between the start and end keywords
 	extractedString2 := fileString[startIndex2+len(startKeyword2) : endIndex2]
 
+	// extractedString1 = "/Users/soumyajitdas/go/src/github.com/smjt-h/selfhealingpipelinetest/src/test/java/sampleUnitTes.java"
+	// extractedString2 = "org.opentest4j.AssertionFailedError: expected: <true> but was: <false>\n\tat sampleUnitTes.t6(sampleUnitTes.java:16)"
 	fmt.Println(extractedString1, extractedString2)
 	// Read the file at the first extracted string path
 	fileBytes2, err := ioutil.ReadFile(extractedString1)
@@ -53,7 +55,7 @@ func main() {
 	}
 
 	// Print the contents of the second file
-	fmt.Println(string(fileBytes2), string(extractedString2))
+	// fmt.Println("codecontent===", string(fileBytes2), "\nerr==", string(extractedString2))
 	heal(extractedString2, string(fileBytes2), extractedString1)
 }
 
@@ -71,12 +73,9 @@ func executeBinary(binaryPath string, args ...string) error {
 func heal(errorMsg, content, filename string) {
 	verbose := true
 
-	// content = "/*\n\t* Copyright 2021 Harness Inc. All rights reserved.\n\t* Use of this source code is governed by the PolyForm Free Trial 1.0.0 license\n\t* that can be found in the licenses directory at the root of this repository, also available at\n\t* https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.\n\t*/\n   \n   package io.harness.beans.sweepingoutputs;\n   \n   import static io.harness.annotations.dev.HarnessTeam.CI;\n   \n   import io.harness.annotation.HarnessEntity;\n   import io.harness.annotation.RecasterAlias;\n   import io.harness.annotations.StoreIn;\n   import dev.morphia.utils.Assert;\n   import io.harness.annotations.dev.OwnedBy;\n   import io.harness.beans.build.BuildStatusUpdateParameter;\n   import io.harness.beans.execution.ExecutionSource;\n   import io.harness.beans.steps.CIRegistry;\n   import io.harness.mongo.index.FdIndex;\n   import io.harness.ng.DbAliases;\n   import io.harness.persistence.AccountAccess;\n   import io.harness.persistence.PersistentEntity;\n   import io.harness.persistence.UuidAware;\n   import io.harness.validation.Update;\n   \n   import com.fasterxml.jackson.annotation.JsonIgnoreProperties;\n   import com.fasterxml.jackson.annotation.JsonTypeName;\n   import com.github.reinert.jjschema.SchemaIgnore;\n   import dev.morphia.annotations.Entity;\n   import dev.morphia.annotations.Id;\n   import java.util.List;\n   import javax.validation.constraints.NotNull;\n   import lombok.Builder;\n   import lombok.Data;\n   import org.springframework.data.annotation.TypeAlias;\n   \n   @Data\n   @Builder\n   @JsonIgnoreProperties(ignoreUnknown = true)\n   @StoreIn(DbAliases.CIMANAGER)\n   @Entity(value = \"stageDetails\")\n   @HarnessEntity(exportable = true)\n   @TypeAlias(\"StageDetails\")\n   @JsonTypeName(\"StageDetails\")\n   @OwnedBy(CI)\n   @RecasterAlias(\"io.harness.beans.sweepingoutputs.StageDetails\")\n   public class StageDetails implements PersistentEntity, UuidAware, ContextElement, AccountAccess {\n\t private String stageID;\n\t private String stageRuntimeID;\n\t private BuildStatusUpdateParameter buildStatusUpdateParameter;\n\t private List<CIRegistry> registries;\n\t private long lastUpdatedAt;\n\t private ExecutionSource executionSource;\n\t @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;\n\t @FdIndex private String accountId;\n   }"
-	// errorMsg = "Unused import - dev.morphia.utils.Assert."
 	if errorMsg == "" || content == "" {
 		log.Fatal("errorMsg or content cannot be empty")
 	}
-	// Print output
 
 	if verbose {
 		fmt.Println("Additional information...")
@@ -87,6 +86,7 @@ func heal(errorMsg, content, filename string) {
 		log.Fatal(err)
 	}
 
+	code = removenewLine(code)
 	err = writeToFile(filename, code)
 	if err != nil {
 		log.Fatal(err)
@@ -172,4 +172,14 @@ func writeToFile(filename, code string) error {
 
 	fmt.Printf("Code successfully written to file '%s'.\n", filename)
 	return nil
+}
+
+func removenewLine(str string) string {
+	//Will remove the first occurance of newline from the input string
+	index := strings.Index(str, "\n")
+	if index != -1 {
+		str = str[index+1:]
+	}
+
+	return str
 }
