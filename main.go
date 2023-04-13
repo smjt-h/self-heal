@@ -2,12 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 
@@ -16,58 +16,33 @@ import (
 
 func main() {
 	// Define the file path and the two sets of keywords to search for
-	filePath := os.Getenv("FILE_PATH")
-	startKeyword1 := "file name=\""
-	endKeyword1 := "\">"
-	startKeyword2 := "message="
-	endKeyword2 := "/>"
+	var logfile string
+	flag.StringVar(&logfile, "logfile", "", "path of log file that will be used to parse error and fix")
 
-	// Read the file at the specified path
-	fileBytes, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		log.Fatalf("Error reading file: %v", err)
+	// Parse command-line flags
+	flag.Parse()
+	fixType := os.Getenv("FIX_TYPE")
+	// filePath := os.Getenv("FILE_PATH")
+
+	errMsg, fileName := "", ""
+	if fixType == "checkstyle" {
+		errMsg, fileName = parseCheckstyle(logfile)
+	} else {
+		errMsg, fileName = parseUT(logfile)
 	}
 
-	// Convert the file contents to a string
-	fileString := string(fileBytes)
-
-	// Find the index of the first set of start and end keywords
-	startIndex1 := strings.Index(fileString, startKeyword1)
-	endIndex1 := strings.Index(fileString, endKeyword1)
-
-	// Extract the first string between the start and end keywords
-	extractedString1 := fileString[startIndex1+len(startKeyword1) : endIndex1]
-
-	// Find the index of the second set of start and end keywords
-	startIndex2 := strings.Index(fileString, startKeyword2)
-	endIndex2 := strings.Index(fileString, endKeyword2)
-
-	// Extract the second string between the start and end keywords
-	extractedString2 := fileString[startIndex2+len(startKeyword2) : endIndex2]
-
-	// extractedString1 = "/Users/soumyajitdas/go/src/github.com/smjt-h/selfhealingpipelinetest/src/test/java/sampleUnitTes.java"
-	// extractedString2 = "org.opentest4j.AssertionFailedError: expected: <true> but was: <false>\n\tat sampleUnitTes.t6(sampleUnitTes.java:16)"
-	fmt.Println(extractedString1, extractedString2)
+	// fileName = "/Users/soumyajitdas/go/src/github.com/smjt-h/selfhealingpipelinetest/src/test/java/sampleUnitTes.java"
+	// errMsg = "org.opentest4j.AssertionFailedError: expected: <true> but was: <false>\n\tat sampleUnitTes.t6(sampleUnitTes.java:16)"
+	fmt.Println(fileName, errMsg)
 	// Read the file at the first extracted string path
-	fileBytes2, err := ioutil.ReadFile(extractedString1)
+	fileBytes2, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		log.Fatalf("Error reading file: %v", err)
 	}
 
 	// Print the contents of the second file
-	// fmt.Println("codecontent===", string(fileBytes2), "\nerr==", string(extractedString2))
-	heal(extractedString2, string(fileBytes2), extractedString1)
-}
-
-func executeBinary(binaryPath string, args ...string) error {
-	cmd := exec.Command(binaryPath, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("failed to execute binary: %v", err)
-	}
-	return nil
+	// fmt.Println("codecontent===", string(fileBytes2), "\nerr==", string(errMsg))
+	heal(errMsg, string(fileBytes2), fileName)
 }
 
 func heal(errorMsg, content, filename string) {
@@ -182,4 +157,40 @@ func removenewLine(str string) string {
 	}
 
 	return str
+}
+
+func parseCheckstyle(filePath string) (string, string) {
+	startKeyword1 := "file name=\""
+	endKeyword1 := "\">"
+	startKeyword2 := "message="
+	endKeyword2 := "/>"
+
+	// Read the file at the specified path
+	fileBytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		log.Fatalf("Error reading file: %v", err)
+	}
+
+	// Convert the file contents to a string
+	fileString := string(fileBytes)
+
+	// Find the index of the first set of start and end keywords
+	startIndex1 := strings.Index(fileString, startKeyword1)
+	endIndex1 := strings.Index(fileString, endKeyword1)
+
+	// Extract the first string between the start and end keywords
+	fileName := fileString[startIndex1+len(startKeyword1) : endIndex1]
+
+	// Find the index of the second set of start and end keywords
+	startIndex2 := strings.Index(fileString, startKeyword2)
+	endIndex2 := strings.Index(fileString, endKeyword2)
+
+	// Extract the second string between the start and end keywords
+	errMsg := fileString[startIndex2+len(startKeyword2) : endIndex2]
+	return errMsg, fileName
+}
+
+func parseUT(filePath string) (string, string) {
+	//logic here
+	return "errMsg", "fileName"
 }
