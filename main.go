@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -30,7 +31,10 @@ func main() {
 	} else if fixType == "compile" {
 		errMsg, fileName = parseCompile(logfile)
 	} else {
-		errMsg, fileName = parseUT(logfile)
+		searchWord := "org.opentest4j.AssertionFailedError: "
+		errMsg = findError(searchWord, logfile)
+
+		fileName = "/harness/src/test/java/" + findUTFileName("at sampleUnitTes.t6(", logfile)
 	}
 
 	// fileName = "/Users/soumyajitdas/go/src/github.com/smjt-h/selfhealingpipelinetest/src/test/java/sampleUnitTes.java"
@@ -195,6 +199,79 @@ func parseCheckstyle(filePath string) (string, string) {
 func parseUT(filePath string) (string, string) {
 	//logic here
 	return "errMsg", "fileName"
+}
+
+func findUTFileName(searchWord, filename string) string {
+	// Open the file
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	// Create a scanner to read the file line by line
+	scanner := bufio.NewScanner(file)
+
+	// Iterate over each line of the file
+	for scanner.Scan() {
+		// Get the current line
+		line := scanner.Text()
+
+		// Check if the line contains the search word
+		if strings.Contains(line, searchWord) {
+			// Get the text after the search word until the end of the line
+			startIndex := strings.Index(line, searchWord) + len(searchWord)
+			endIndex := len(line)
+			result := strings.TrimSpace(line[startIndex:endIndex])
+
+			// Print the result
+			parts := strings.Split(result, ":")
+			return parts[0]
+		}
+	}
+
+	// Check for errors during scanning
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+		return ""
+	}
+	return ""
+}
+
+func findError(searchWord, filename string) string {
+	// Open the file
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	// Create a scanner to read the file line by line
+	scanner := bufio.NewScanner(file)
+
+	// Iterate over each line of the file
+	for scanner.Scan() {
+		// Get the current line
+		line := scanner.Text()
+
+		// Check if the line contains the search word
+		if strings.Contains(line, searchWord) {
+			// Get the text after the search word until the end of the line
+			startIndex := strings.Index(line, searchWord) + len(searchWord)
+			endIndex := len(line)
+			result := strings.TrimSpace(line[startIndex:endIndex])
+
+			// Print the result
+			fmt.Println(result)
+			return result
+		}
+	}
+
+	// Check for errors during scanning
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return ""
 }
 
 func parseCompile(filePath string) (string, string) {
