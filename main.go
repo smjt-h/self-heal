@@ -29,7 +29,9 @@ func main() {
 	if fixType == "checkstyle" {
 		errMsg, fileName = parseCheckstyle(logfile)
 	} else if fixType == "compile" {
-		errMsg, fileName = parseCompile(logfile)
+		searchWord1 := "[ERROR] /harness/"
+		fileName = findFailedCompileFile(searchWord1, logfile)
+		errMsg = "fix the compilation error in the file"
 	} else {
 		searchWord := "org.opentest4j.AssertionFailedError: "
 		errMsg = findError(searchWord, logfile)
@@ -274,8 +276,27 @@ func findError(searchWord, filename string) string {
 	return ""
 }
 
-func parseCompile(filePath string) (string, string) {
-	//logic here
-	errMsg := "fix the compilation error in the file"
-	return errMsg, "fileName"
+func findFailedCompileFile(searchWord1, filename string) string {
+	// Open the file
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	// Create a scanner to read the file line by line
+	scanner := bufio.NewScanner(file)
+	// Iterate over each line of the file
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, searchWord1) {
+			filename := strings.Split(strings.Split(line, "[ERROR]")[1], ":")[0]
+			fmt.Println(filename)
+			return filename
+		}
+	}
+	// Check for errors during scanning
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return ""
 }
