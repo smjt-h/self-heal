@@ -27,6 +27,8 @@ func main() {
 	errMsg, fileName := "", ""
 	if fixType == "checkstyle" {
 		errMsg, fileName = parseCheckstyle(logfile)
+	} else if fixType == "compile" {
+		errMsg, fileName = parseCompile(logfile)
 	} else {
 		errMsg, fileName = parseUT(logfile)
 	}
@@ -193,4 +195,10 @@ func parseCheckstyle(filePath string) (string, string) {
 func parseUT(filePath string) (string, string) {
 	//logic here
 	return "errMsg", "fileName"
+}
+
+func parseCompile(filePath string) (string, string) {
+	//logic here
+	errMsg := "fix the compilation error in the file"
+	return errMsg, "fileName"
 }
